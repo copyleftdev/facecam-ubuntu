@@ -1,0 +1,34 @@
+[package]
+name = "facecam-fuzz"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+facecam-common = { path = "../../crates/facecam-common" }
+jpeg-decoder = "0.3.2"
+serde_json = "1"
+toml = "0.8"
+
+[[bin]]
+name = "fuzz_v4l2_querycap"
+path = "src/fuzz_v4l2_querycap.rs"
+
+[[bin]]
+name = "fuzz_v4l2_controls"
+path = "src/fuzz_v4l2_controls.rs"
+
+[[bin]]
+name = "fuzz_ipc_command"
+path = "src/fuzz_ipc_command.rs"
+
+[[bin]]
+name = "fuzz_profile_parse"
+path = "src/fuzz_profile_parse.rs"
+
+[[bin]]
+name = "fuzz_format_fourcc"
+path = "src/fuzz_format_fourcc.rs"
+
+[[bin]]
+name = "fuzz_firmware_bcd"
+path = "src/fuzz_firmware_bcd.rs"

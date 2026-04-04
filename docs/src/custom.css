@@ -1,0 +1,43 @@
+/* Facecam Ubuntu — mdbook custom styles */
+
+:root {
+    --sidebar-width: 260px;
+}
+
+/* Cleaner code blocks */
+pre {
+    border-radius: 6px;
+}
+
+/* Table styling */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+}
+table th {
+    background-color: rgba(0, 255, 136, 0.1);
+    font-weight: 600;
+}
+table th, table td {
+    padding: 8px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Keyboard shortcut styling */
+kbd {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    padding: 1px 6px;
+    font-size: 0.9em;
+    font-family: monospace;
+}
+
+/* Admonition-style callouts */
+blockquote {
+    border-left: 4px solid #00ff88;
+    padding: 0.5em 1em;
+    margin: 1em 0;
+    background-color: rgba(0, 255, 136, 0.05);
+}

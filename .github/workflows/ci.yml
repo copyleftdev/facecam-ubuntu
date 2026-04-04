@@ -1,0 +1,190 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  release:
+    types: [published]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    name: Check & Lint
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - name: Install system deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libusb-1.0-0-dev pkg-config \
+            libxkbcommon-dev libwayland-dev libx11-dev
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+      - name: Clippy
+        run: cargo clippy --workspace -- -D warnings
+      - name: Build
+        run: cargo build --workspace
+      - name: Build release
+        run: cargo build --workspace --release
+
+  test:
+    name: Test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install system deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libusb-1.0-0-dev pkg-config \
+            libxkbcommon-dev libwayland-dev libx11-dev
+      - name: Run tests
+        run: cargo test --workspace
+      - name: Verify binaries run
+        run: |
+          cargo build --release
+          ./target/release/facecam-probe --help
+          ./target/release/facecam-ctl --help
+          ./target/release/facecam-harness --help
+          ./target/release/facecam-daemon --help
+          ./target/release/facecam-visual --help
+
+  deb:
+    name: Build .deb package
+    runs-on: ubuntu-24.04
+    needs: [check, test]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install system deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libusb-1.0-0-dev pkg-config \
+            libxkbcommon-dev libwayland-dev libx11-dev dpkg-dev
+      - name: Build release binaries
+        run: cargo build --workspace --release
+      - name: Package .deb
+        run: |
+          PKG_VERSION="${GITHUB_REF_NAME:-0.1.0}"
+          PKG_VERSION="${PKG_VERSION#v}"
+          # Fallback for non-tag builds
+          if [[ "$PKG_VERSION" == *"/"* ]] || [[ -z "$PKG_VERSION" ]]; then
+            PKG_VERSION="0.1.0-$(git rev-parse --short HEAD)"
+          fi
+
+          PKG_DIR="facecam-ubuntu_${PKG_VERSION}_amd64"
+          mkdir -p "$PKG_DIR/DEBIAN"
+          mkdir -p "$PKG_DIR/usr/bin"
+          mkdir -p "$PKG_DIR/etc/udev/rules.d"
+          mkdir -p "$PKG_DIR/etc/modprobe.d"
+          mkdir -p "$PKG_DIR/etc/modules-load.d"
+          mkdir -p "$PKG_DIR/lib/systemd/system"
+          mkdir -p "$PKG_DIR/usr/share/doc/facecam-ubuntu"
+
+          # Binaries
+          cp target/release/facecam-probe   "$PKG_DIR/usr/bin/"
+          cp target/release/facecam-daemon  "$PKG_DIR/usr/bin/"
+          cp target/release/facecam-ctl     "$PKG_DIR/usr/bin/"
+          cp target/release/facecam-harness "$PKG_DIR/usr/bin/"
+          cp target/release/facecam-visual  "$PKG_DIR/usr/bin/"
+          strip "$PKG_DIR/usr/bin/"facecam-*
+
+          # Config files
+          cp config/99-facecam.rules      "$PKG_DIR/etc/udev/rules.d/"
+          cp config/v4l2loopback.conf     "$PKG_DIR/etc/modprobe.d/"
+          cp config/v4l2loopback-load.conf "$PKG_DIR/etc/modules-load.d/"
+          cp config/facecam-daemon.service "$PKG_DIR/lib/systemd/system/"
+
+          # Docs
+          cp research/technical-memo.md   "$PKG_DIR/usr/share/doc/facecam-ubuntu/"
+
+          # Compute installed size
+          INSTALLED_SIZE=$(du -sk "$PKG_DIR" | awk '{print $1}')
+
+          # Control file
+          cat > "$PKG_DIR/DEBIAN/control" << EOF
+          Package: facecam-ubuntu
+          Version: ${PKG_VERSION}
+          Section: video
+          Priority: optional
+          Architecture: amd64
+          Depends: v4l2loopback-dkms, v4l-utils, libusb-1.0-0
+          Recommends: v4l2loopback-utils
+          Installed-Size: ${INSTALLED_SIZE}
+          Maintainer: Facecam Ubuntu <noreply@example.com>
+          Description: Linux-native runtime for the Elgato Facecam
+           Provides device probing, a normalization daemon (v4l2 capture to
+           v4l2loopback virtual camera), control CLI, compatibility harness,
+           and a visual diagnostic tool with waveform monitor, RGB histogram,
+           zebra stripes, focus peaking, and A/B comparison.
+           .
+           Includes udev rules, systemd service, and v4l2loopback configuration
+           for automatic operation when the Facecam is plugged in.
+          EOF
+          # Remove leading spaces from control file (heredoc artifact)
+          sed -i 's/^          //' "$PKG_DIR/DEBIAN/control"
+
+          # Conffiles — mark config files so apt preserves user edits
+          cat > "$PKG_DIR/DEBIAN/conffiles" << EOF
+          /etc/udev/rules.d/99-facecam.rules
+          /etc/modprobe.d/v4l2loopback.conf
+          /etc/modules-load.d/v4l2loopback-load.conf
+          EOF
+          sed -i 's/^          //' "$PKG_DIR/DEBIAN/conffiles"
+
+          # Post-install script
+          cat > "$PKG_DIR/DEBIAN/postinst" << 'EOF'
+          #!/bin/sh
+          set -e
+          # Reload udev rules
+          udevadm control --reload-rules 2>/dev/null || true
+          udevadm trigger 2>/dev/null || true
+          # Reload systemd
+          systemctl daemon-reload 2>/dev/null || true
+          # Create default profiles for the installing user
+          if [ -n "$SUDO_USER" ]; then
+            sudo -u "$SUDO_USER" facecam-ctl profile init 2>/dev/null || true
+          fi
+          echo "facecam-ubuntu installed. Plug in your Elgato Facecam to get started."
+          echo "  facecam-probe detect    — verify camera detection"
+          echo "  facecam-visual          — live diagnostic viewer"
+          EOF
+          sed -i 's/^          //' "$PKG_DIR/DEBIAN/postinst"
+          chmod 755 "$PKG_DIR/DEBIAN/postinst"
+
+          # Pre-removal script
+          cat > "$PKG_DIR/DEBIAN/prerm" << 'EOF'
+          #!/bin/sh
+          set -e
+          systemctl stop facecam-daemon.service 2>/dev/null || true
+          systemctl disable facecam-daemon.service 2>/dev/null || true
+          EOF
+          sed -i 's/^          //' "$PKG_DIR/DEBIAN/prerm"
+          chmod 755 "$PKG_DIR/DEBIAN/prerm"
+
+          # Build .deb
+          dpkg-deb --build --root-owner-group "$PKG_DIR"
+          mv "${PKG_DIR}.deb" "facecam-ubuntu_${PKG_VERSION}_amd64.deb"
+
+          echo "Built: facecam-ubuntu_${PKG_VERSION}_amd64.deb"
+          dpkg-deb --info "facecam-ubuntu_${PKG_VERSION}_amd64.deb"
+          dpkg-deb --contents "facecam-ubuntu_${PKG_VERSION}_amd64.deb"
+
+      - name: Upload .deb artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: facecam-ubuntu-deb
+          path: "*.deb"
+
+      - name: Upload to release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: "*.deb"

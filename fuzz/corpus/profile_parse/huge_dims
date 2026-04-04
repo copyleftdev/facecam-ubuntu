@@ -1,0 +1,7 @@
+
+name = "huge"
+[video_mode]
+width = 4294967295
+height = 4294967295
+fps = 999
+format = "XXXX"

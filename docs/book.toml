@@ -1,0 +1,17 @@
+[book]
+title = "Facecam Ubuntu Runtime"
+description = "Linux-native runtime for the Elgato Facecam"
+authors = ["Facecam Ubuntu Contributors"]
+language = "en"
+src = "src"
+
+[build]
+build-dir = "book"
+
+[output.html]
+default-theme = "navy"
+preferred-dark-theme = "navy"
+git-repository-url = "https://github.com/facecam-ubuntu/facecam-ubuntu"
+edit-url-template = "https://github.com/facecam-ubuntu/facecam-ubuntu/edit/main/docs/{path}"
+additional-css = ["src/custom.css"]
+no-section-label = false

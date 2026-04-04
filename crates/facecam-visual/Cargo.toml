@@ -1,0 +1,16 @@
+[package]
+name = "facecam-visual"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "facecam-visual"
+path = "src/main.rs"
+
+[dependencies]
+facecam-common.workspace = true
+anyhow.workspace = true
+clap.workspace = true
+minifb = "0.28"
+jpeg-decoder = "0.3"
+libc = "0.2"

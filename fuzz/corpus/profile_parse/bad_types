@@ -1,0 +1,5 @@
+
+name = 12345
+description = true
+[controls]
+brightness = "not_a_number"

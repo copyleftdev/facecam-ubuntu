@@ -1,0 +1,18 @@
+[package]
+name = "facecam-harness"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "facecam-harness"
+path = "src/main.rs"
+
+[dependencies]
+facecam-common.workspace = true
+anyhow.workspace = true
+clap.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+chrono.workspace = true

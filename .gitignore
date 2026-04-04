@@ -1,0 +1,6 @@
+/target
+/fuzz/targets/target
+/fuzz/findings
+/docs/book
+*.deb
+facecam-ubuntu_*_amd64/

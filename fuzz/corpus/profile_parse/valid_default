@@ -1,0 +1,13 @@
+
+name = "default"
+description = "Test profile"
+
+[video_mode]
+width = 1920
+height = 1080
+fps = 30
+format = "UYVY"
+
+[controls]
+brightness = 128
+contrast = 3

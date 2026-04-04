@@ -1,0 +1,35 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/facecam-common",
+    "crates/facecam-probe",
+    "crates/facecam-harness",
+    "crates/facecam-daemon",
+    "crates/facecam-ctl",
+    "crates/facecam-visual",
+]
+exclude = [
+    "fuzz/targets",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["Facecam Ubuntu Runtime"]
+
+[workspace.dependencies]
+facecam-common = { path = "crates/facecam-common" }
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
+tokio = { version = "1", features = ["full"] }
+rusb = "0.9"
+nix = { version = "0.29", features = ["ioctl", "fs", "poll"] }
+chrono = { version = "0.4", features = ["serde"] }
+thiserror = "2"
+uuid = { version = "1", features = ["v4"] }

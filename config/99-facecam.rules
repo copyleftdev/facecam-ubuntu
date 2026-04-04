@@ -1,0 +1,24 @@
+# udev rules for Elgato Facecam
+# Install to: /etc/udev/rules.d/99-facecam.rules
+# Reload: sudo udevadm control --reload-rules && sudo udevadm trigger
+
+# Elgato Facecam (PID 0x0078) — primary capture node only (index 0)
+SUBSYSTEM=="video4linux", ATTRS{idVendor}=="0fd9", ATTRS{idProduct}=="0078", ATTR{index}=="0", \
+    SYMLINK+="video-facecam", \
+    TAG+="systemd", ENV{SYSTEMD_WANTS}+="facecam-daemon.service", \
+    MODE="0660", GROUP="video"
+
+# Elgato Facecam Pro (PID 0x0079)
+SUBSYSTEM=="video4linux", ATTRS{idVendor}=="0fd9", ATTRS{idProduct}=="0079", ATTR{index}=="0", \
+    SYMLINK+="video-facecam-pro", \
+    MODE="0660", GROUP="video"
+
+# Elgato Facecam MK.2 (PID 0x0093)
+SUBSYSTEM=="video4linux", ATTRS{idVendor}=="0fd9", ATTRS{idProduct}=="0093", ATTR{index}=="0", \
+    SYMLINK+="video-facecam-mk2", \
+    MODE="0660", GROUP="video"
+
+# Elgato Facecam MK.2 USB2 mode (PID 0x0094)
+SUBSYSTEM=="video4linux", ATTRS{idVendor}=="0fd9", ATTRS{idProduct}=="0094", ATTR{index}=="0", \
+    SYMLINK+="video-facecam-mk2", \
+    MODE="0660", GROUP="video"

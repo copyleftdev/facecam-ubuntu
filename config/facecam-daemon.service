@@ -1,0 +1,46 @@
+[Unit]
+Description=Facecam Normalization Daemon
+Documentation=https://github.com/facecam-ubuntu
+After=v4l2loopback-load.service
+Wants=v4l2loopback-load.service
+
+# Start when Facecam is plugged in, stop when removed
+# The udev rule (99-facecam.rules) triggers this via SYSTEMD_WANTS
+BindsTo=dev-video\x2dfacecam.device
+After=dev-video\x2dfacecam.device
+
+[Service]
+Type=simple
+ExecStartPre=/sbin/modprobe v4l2loopback video_nr=10 card_label="Facecam Normalized" exclusive_caps=1 max_buffers=4 max_openers=10
+ExecStart=/usr/local/bin/facecam-daemon --foreground --log-format json
+Restart=always
+RestartSec=2s
+
+# Allow unlimited restarts (device may need many recovery cycles)
+StartLimitIntervalSec=0
+
+# Environment
+Environment=RUST_LOG=info
+
+# Resource limits
+LimitNOFILE=1024
+
+# Security hardening
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+NoNewPrivileges=false
+DeviceAllow=/dev/video* rw
+DeviceAllow=/dev/v4l2loopback rw
+ReadWritePaths=/run /tmp
+ReadWritePaths=%h/.config/facecam
+ReadWritePaths=%h/.local/share/facecam
+
+# Needed for USB sysfs reset
+ReadWritePaths=/sys/bus/usb/devices
+
+# Group access
+SupplementaryGroups=video
+
+[Install]
+WantedBy=multi-user.target

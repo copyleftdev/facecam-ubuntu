@@ -1,0 +1,5 @@
+
+name = "neg"
+[controls]
+brightness = -9999999
+contrast = 9999999

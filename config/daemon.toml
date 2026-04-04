@@ -1,0 +1,22 @@
+# Facecam daemon configuration
+# Install to: ~/.config/facecam/daemon.toml
+
+# Maximum USB reset recovery attempts before entering failed state
+max_recovery_attempts = 5
+
+# Timeout in ms waiting for a frame before considering the stream dead
+frame_timeout_ms = 5000
+
+[loopback]
+# Video device number for the virtual camera (/dev/video10)
+video_nr = 10
+# Card label shown to applications
+card_label = "Facecam Normalized"
+# Maximum simultaneous consumers
+max_openers = 10
+
+[logging]
+# Directory for log files
+# log_dir = "~/.local/share/facecam/logs"
+# Maximum diagnostic events to keep in memory
+max_events = 1000
