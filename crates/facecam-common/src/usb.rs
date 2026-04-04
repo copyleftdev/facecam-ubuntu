@@ -18,7 +18,8 @@ pub fn enumerate_elgato_devices() -> Result<Vec<DeviceFingerprint>> {
         let ver = desc.device_version();
         // bcdDevice 0x0409 -> major=4, minor=0, sub_minor=9 in rusb
         // We need major as the firmware major, and (minor*10 + sub_minor) as firmware minor
-        let bcd = ((ver.major() as u16) << 8) | ((ver.minor() as u16) * 10 + ver.sub_minor() as u16);
+        let bcd =
+            ((ver.major() as u16) << 8) | ((ver.minor() as u16) * 10 + ver.sub_minor() as u16);
         let speed: UsbSpeed = device.speed().into();
 
         let firmware = FirmwareVersion::from_bcd(bcd);
@@ -29,11 +30,9 @@ pub fn enumerate_elgato_devices() -> Result<Vec<DeviceFingerprint>> {
             String::new()
         } else {
             match device.open() {
-                Ok(handle) => {
-                    handle
-                        .read_string_descriptor_ascii(desc.serial_number_string_index().unwrap_or(0))
-                        .unwrap_or_default()
-                }
+                Ok(handle) => handle
+                    .read_string_descriptor_ascii(desc.serial_number_string_index().unwrap_or(0))
+                    .unwrap_or_default(),
                 Err(_) => String::new(),
             }
         };
@@ -84,8 +83,14 @@ pub fn find_usb_sysfs_path(bus: u8, addr: u8) -> Result<Option<PathBuf>> {
         let devnum_path = path.join("devnum");
 
         if busnum_path.exists() && devnum_path.exists() {
-            let busnum: u8 = fs::read_to_string(&busnum_path)?.trim().parse().unwrap_or(0);
-            let devnum: u8 = fs::read_to_string(&devnum_path)?.trim().parse().unwrap_or(0);
+            let busnum: u8 = fs::read_to_string(&busnum_path)?
+                .trim()
+                .parse()
+                .unwrap_or(0);
+            let devnum: u8 = fs::read_to_string(&devnum_path)?
+                .trim()
+                .parse()
+                .unwrap_or(0);
 
             if busnum == bus && devnum == addr {
                 return Ok(Some(path));

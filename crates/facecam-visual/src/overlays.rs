@@ -10,7 +10,9 @@ pub fn draw_zebras(buf: &mut [u32], w: usize, h: usize, threshold: u8, frame_cou
     for y in 0..h {
         for x in 0..w {
             let idx = y * w + x;
-            if idx >= buf.len() { break; }
+            if idx >= buf.len() {
+                break;
+            }
             let pixel = buf[idx];
             let r = ((pixel >> 16) & 0xFF) as u8;
             let g = ((pixel >> 8) & 0xFF) as u8;
@@ -33,7 +35,9 @@ pub fn draw_focus_peaking(buf: &mut [u32], w: usize, h: usize, sensitivity: u32,
     // We need luma values — extract first, then overlay
     let mut luma = vec![0i16; w * h];
     for i in 0..w * h {
-        if i >= buf.len() { break; }
+        if i >= buf.len() {
+            break;
+        }
         let pixel = buf[i];
         let r = ((pixel >> 16) & 0xFF) as i16;
         let g = ((pixel >> 8) & 0xFF) as i16;
@@ -46,11 +50,19 @@ pub fn draw_focus_peaking(buf: &mut [u32], w: usize, h: usize, sensitivity: u32,
         for x in 1..w.saturating_sub(1) {
             let idx = y * w + x;
             // Gx
-            let gx = -luma[(y-1)*w + (x-1)] - 2*luma[y*w + (x-1)] - luma[(y+1)*w + (x-1)]
-                    + luma[(y-1)*w + (x+1)] + 2*luma[y*w + (x+1)] + luma[(y+1)*w + (x+1)];
+            let gx = -luma[(y - 1) * w + (x - 1)]
+                - 2 * luma[y * w + (x - 1)]
+                - luma[(y + 1) * w + (x - 1)]
+                + luma[(y - 1) * w + (x + 1)]
+                + 2 * luma[y * w + (x + 1)]
+                + luma[(y + 1) * w + (x + 1)];
             // Gy
-            let gy = -luma[(y-1)*w + (x-1)] - 2*luma[(y-1)*w + x] - luma[(y-1)*w + (x+1)]
-                    + luma[(y+1)*w + (x-1)] + 2*luma[(y+1)*w + x] + luma[(y+1)*w + (x+1)];
+            let gy = -luma[(y - 1) * w + (x - 1)]
+                - 2 * luma[(y - 1) * w + x]
+                - luma[(y - 1) * w + (x + 1)]
+                + luma[(y + 1) * w + (x - 1)]
+                + 2 * luma[(y + 1) * w + x]
+                + luma[(y + 1) * w + (x + 1)];
             let magnitude = ((gx.abs() + gy.abs()) as u32) >> 1;
             if magnitude > sensitivity {
                 if idx < buf.len() {
@@ -64,9 +76,15 @@ pub fn draw_focus_peaking(buf: &mut [u32], w: usize, h: usize, sensitivity: u32,
 /// RGB histogram — count pixel values per channel, draw as overlapping curves.
 /// Drawn into a specified region of the framebuffer.
 pub fn draw_rgb_histogram(
-    buf: &mut [u32], buf_w: usize,
-    video_buf: &[u32], video_w: usize, video_h: usize,
-    panel_x: usize, panel_y: usize, panel_w: usize, panel_h: usize,
+    buf: &mut [u32],
+    buf_w: usize,
+    video_buf: &[u32],
+    video_w: usize,
+    video_h: usize,
+    panel_x: usize,
+    panel_y: usize,
+    panel_w: usize,
+    panel_h: usize,
 ) {
     // Count pixel values per channel
     let mut r_hist = [0u32; 256];
@@ -76,7 +94,9 @@ pub fn draw_rgb_histogram(
     for y in 0..video_h {
         for x in 0..video_w {
             let idx = y * buf_w + x;
-            if idx >= video_buf.len() { continue; }
+            if idx >= video_buf.len() {
+                continue;
+            }
             let pixel = video_buf[idx];
             r_hist[((pixel >> 16) & 0xFF) as usize] += 1;
             g_hist[((pixel >> 8) & 0xFF) as usize] += 1;
@@ -85,42 +105,68 @@ pub fn draw_rgb_histogram(
     }
 
     // Find max for normalization
-    let max_count = r_hist.iter().chain(g_hist.iter()).chain(b_hist.iter())
-        .copied().max().unwrap_or(1).max(1);
+    let max_count = r_hist
+        .iter()
+        .chain(g_hist.iter())
+        .chain(b_hist.iter())
+        .copied()
+        .max()
+        .unwrap_or(1)
+        .max(1);
 
     // Clear panel area
     fill_rect(buf, buf_w, panel_x, panel_y, panel_w, panel_h, 0x0D0D1A);
 
     // Draw each channel
-    draw_histogram_channel(buf, buf_w, &r_hist, max_count, panel_x, panel_y, panel_w, panel_h, 0xCC0000);
-    draw_histogram_channel(buf, buf_w, &g_hist, max_count, panel_x, panel_y, panel_w, panel_h, 0x00CC00);
-    draw_histogram_channel(buf, buf_w, &b_hist, max_count, panel_x, panel_y, panel_w, panel_h, 0x0044CC);
+    draw_histogram_channel(
+        buf, buf_w, &r_hist, max_count, panel_x, panel_y, panel_w, panel_h, 0xCC0000,
+    );
+    draw_histogram_channel(
+        buf, buf_w, &g_hist, max_count, panel_x, panel_y, panel_w, panel_h, 0x00CC00,
+    );
+    draw_histogram_channel(
+        buf, buf_w, &b_hist, max_count, panel_x, panel_y, panel_w, panel_h, 0x0044CC,
+    );
 
     // Draw clipping warnings — red bars at edges if values pile up at 0 or 255
     let total_pixels = (video_w * video_h) as u32;
     let clip_threshold = total_pixels / 50; // >2% is clipping
-    if r_hist[255] > clip_threshold || g_hist[255] > clip_threshold || b_hist[255] > clip_threshold {
+    if r_hist[255] > clip_threshold || g_hist[255] > clip_threshold || b_hist[255] > clip_threshold
+    {
         // Highlight right edge (overexposure)
         for y in panel_y..panel_y + panel_h {
             let idx = y * buf_w + panel_x + panel_w - 2;
-            if idx < buf.len() { buf[idx] = 0xFF0000; }
-            if idx + 1 < buf.len() { buf[idx + 1] = 0xFF0000; }
+            if idx < buf.len() {
+                buf[idx] = 0xFF0000;
+            }
+            if idx + 1 < buf.len() {
+                buf[idx + 1] = 0xFF0000;
+            }
         }
     }
     if r_hist[0] > clip_threshold || g_hist[0] > clip_threshold || b_hist[0] > clip_threshold {
         // Highlight left edge (underexposure / crushed blacks)
         for y in panel_y..panel_y + panel_h {
             let idx = y * buf_w + panel_x;
-            if idx < buf.len() { buf[idx] = 0x0000FF; }
-            if idx + 1 < buf.len() { buf[idx + 1] = 0x0000FF; }
+            if idx < buf.len() {
+                buf[idx] = 0x0000FF;
+            }
+            if idx + 1 < buf.len() {
+                buf[idx + 1] = 0x0000FF;
+            }
         }
     }
 }
 
 fn draw_histogram_channel(
-    buf: &mut [u32], buf_w: usize,
-    hist: &[u32; 256], max_count: u32,
-    px: usize, py: usize, pw: usize, ph: usize,
+    buf: &mut [u32],
+    buf_w: usize,
+    hist: &[u32; 256],
+    max_count: u32,
+    px: usize,
+    py: usize,
+    pw: usize,
+    ph: usize,
     color: u32,
 ) {
     for i in 0..256 {
@@ -138,7 +184,8 @@ fn draw_histogram_channel(
                 let cr = (color >> 16) & 0xFF;
                 let cg = (color >> 8) & 0xFF;
                 let cb = color & 0xFF;
-                buf[idx] = ((er + cr).min(255) << 16) | ((eg + cg).min(255) << 8) | (eb + cb).min(255);
+                buf[idx] =
+                    ((er + cr).min(255) << 16) | ((eg + cg).min(255) << 8) | (eb + cb).min(255);
             }
         }
     }
@@ -148,9 +195,15 @@ fn draw_histogram_channel(
 /// Each column of the video maps to a column of the waveform.
 /// Vertical axis = luma 0 (bottom) to 255 (top).
 pub fn draw_waveform(
-    buf: &mut [u32], buf_w: usize,
-    video_buf: &[u32], video_w: usize, video_h: usize,
-    panel_x: usize, panel_y: usize, panel_w: usize, panel_h: usize,
+    buf: &mut [u32],
+    buf_w: usize,
+    video_buf: &[u32],
+    video_w: usize,
+    video_h: usize,
+    panel_x: usize,
+    panel_y: usize,
+    panel_w: usize,
+    panel_h: usize,
 ) {
     // Clear panel
     fill_rect(buf, buf_w, panel_x, panel_y, panel_w, panel_h, 0x0D0D1A);
@@ -161,23 +214,33 @@ pub fn draw_waveform(
     for x in panel_x..panel_x + panel_w {
         if ire_0_y < buf.len() / buf_w {
             let idx = ire_0_y * buf_w + x;
-            if idx < buf.len() && x % 4 == 0 { buf[idx] = 0x333344; }
+            if idx < buf.len() && x % 4 == 0 {
+                buf[idx] = 0x333344;
+            }
         }
         if ire_100_y < buf.len() / buf_w {
             let idx = ire_100_y * buf_w + x;
-            if idx < buf.len() && x % 4 == 0 { buf[idx] = 0x333344; }
+            if idx < buf.len() && x % 4 == 0 {
+                buf[idx] = 0x333344;
+            }
         }
     }
 
     // For each video column, sample luma values and plot
-    let _step = if video_w > panel_w { video_w / panel_w } else { 1 };
+    let _step = if video_w > panel_w {
+        video_w / panel_w
+    } else {
+        1
+    };
     for col in 0..panel_w.min(video_w) {
         let src_col = col * video_w / panel_w;
         // Sample every Nth row for performance
         let row_step = (video_h / 64).max(1);
         for row in (0..video_h).step_by(row_step) {
             let src_idx = row * buf_w + src_col;
-            if src_idx >= video_buf.len() { continue; }
+            if src_idx >= video_buf.len() {
+                continue;
+            }
             let pixel = video_buf[src_idx];
             let r = ((pixel >> 16) & 0xFF) as u32;
             let g = ((pixel >> 8) & 0xFF) as u32;
@@ -202,18 +265,22 @@ pub fn draw_waveform(
     for y in panel_y..panel_y + panel_h {
         for x in panel_x..panel_x + panel_w {
             let idx = y * buf_w + x;
-            if idx >= buf.len() { continue; }
+            if idx >= buf.len() {
+                continue;
+            }
             let brightness = buf[idx] & 0xFF;
-            if brightness < 2 { continue; } // Skip empty pixels
+            if brightness < 2 {
+                continue;
+            } // Skip empty pixels
             let luma_level = 255 - ((y - panel_y) * 255 / panel_h);
             let color = if luma_level > 235 {
-                blend_color(0xFF3333, brightness as u32)  // Red — overexposed
+                blend_color(0xFF3333, brightness as u32) // Red — overexposed
             } else if luma_level > 200 {
-                blend_color(0xFFCC00, brightness as u32)  // Yellow — hot
+                blend_color(0xFFCC00, brightness as u32) // Yellow — hot
             } else if luma_level < 16 {
-                blend_color(0x3333FF, brightness as u32)  // Blue — crushed
+                blend_color(0x3333FF, brightness as u32) // Blue — crushed
             } else {
-                blend_color(0x00FF66, brightness as u32)  // Green — safe
+                blend_color(0x00FF66, brightness as u32) // Green — safe
             };
             buf[idx] = color;
         }
@@ -242,17 +309,30 @@ impl TimingWaterfall {
         self.data.push(frame_time_ms);
     }
 
-    pub fn draw(&self, buf: &mut [u32], buf_w: usize,
-                px: usize, py: usize, pw: usize, ph: usize,
-                target_ms: f64) {
+    pub fn draw(
+        &self,
+        buf: &mut [u32],
+        buf_w: usize,
+        px: usize,
+        py: usize,
+        pw: usize,
+        ph: usize,
+        target_ms: f64,
+    ) {
         fill_rect(buf, buf_w, px, py, pw, ph, 0x0D0D1A);
 
-        let start = if self.data.len() > pw { self.data.len() - pw } else { 0 };
+        let start = if self.data.len() > pw {
+            self.data.len() - pw
+        } else {
+            0
+        };
         let offset = pw.saturating_sub(self.data.len());
 
         for (i, &ms) in self.data.iter().skip(start).enumerate() {
             let x = px + offset + i;
-            if x >= px + pw { break; }
+            if x >= px + pw {
+                break;
+            }
 
             let ratio = ms / target_ms;
             let color = if ratio < 1.1 {
@@ -280,7 +360,9 @@ impl TimingWaterfall {
         let target_y = py + ph - ((ph as f64 / 3.0) as usize); // target = 1/3 height
         for x in (px..px + pw).step_by(4) {
             let idx = target_y * buf_w + x;
-            if idx < buf.len() { buf[idx] = 0x444466; }
+            if idx < buf.len() {
+                buf[idx] = 0x444466;
+            }
         }
     }
 }
@@ -293,7 +375,10 @@ pub struct ABCompare {
 
 impl ABCompare {
     pub fn new() -> Self {
-        Self { reference: None, split_pos: 0.5 }
+        Self {
+            reference: None,
+            split_pos: 0.5,
+        }
     }
 
     pub fn capture_reference(&mut self, buf: &[u32], w: usize, h: usize) {

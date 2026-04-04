@@ -146,7 +146,7 @@ pub fn enumerate_formats(fd: RawFd) -> Result<Vec<FormatDescription>> {
 
     loop {
         let mut fmtdesc = [0u8; 64]; // struct v4l2_fmtdesc
-        // Set index
+                                     // Set index
         fmtdesc[0..4].copy_from_slice(&index.to_ne_bytes());
         // Set type = VIDEO_CAPTURE
         fmtdesc[4..8].copy_from_slice(&V4L2_BUF_TYPE_VIDEO_CAPTURE.to_ne_bytes());
@@ -216,7 +216,12 @@ pub struct FrameSize {
 }
 
 /// Enumerate frame intervals for a format+size
-pub fn enumerate_frame_intervals(fd: RawFd, fourcc: u32, width: u32, height: u32) -> Result<Vec<FrameInterval>> {
+pub fn enumerate_frame_intervals(
+    fd: RawFd,
+    fourcc: u32,
+    width: u32,
+    height: u32,
+) -> Result<Vec<FrameInterval>> {
     let mut intervals = Vec::new();
     let mut index: u32 = 0;
 
@@ -233,7 +238,10 @@ pub fn enumerate_frame_intervals(fd: RawFd, fourcc: u32, width: u32, height: u32
                 if frmival_type == V4L2_FRMIVAL_TYPE_DISCRETE {
                     let numerator = u32::from_ne_bytes(frmivalenum[20..24].try_into()?);
                     let denominator = u32::from_ne_bytes(frmivalenum[24..28].try_into()?);
-                    intervals.push(FrameInterval { numerator, denominator });
+                    intervals.push(FrameInterval {
+                        numerator,
+                        denominator,
+                    });
                 }
                 index += 1;
             }
@@ -325,12 +333,13 @@ pub fn enumerate_controls(fd: RawFd) -> Result<Vec<ControlValue>> {
                 let value = get_control(fd, ctrl_id).unwrap_or(0);
 
                 // Get menu items if applicable
-                let menu_items = if ctrl_type == ControlType::Menu || ctrl_type == ControlType::IntegerMenu {
-                    enumerate_menu_items(fd, ctrl_id, minimum as u32, maximum as u32)
-                        .unwrap_or_default()
-                } else {
-                    Vec::new()
-                };
+                let menu_items =
+                    if ctrl_type == ControlType::Menu || ctrl_type == ControlType::IntegerMenu {
+                        enumerate_menu_items(fd, ctrl_id, minimum as u32, maximum as u32)
+                            .unwrap_or_default()
+                    } else {
+                        Vec::new()
+                    };
 
                 controls.push(ControlValue {
                     name,
@@ -392,9 +401,9 @@ pub fn set_format(fd: RawFd, width: u32, height: u32, fourcc: u32) -> Result<()>
     //   type=0, pix.width=8, pix.height=12, pix.pixelformat=16
     let mut fmt = [0u8; 208]; // struct v4l2_format
     fmt[0..4].copy_from_slice(&V4L2_BUF_TYPE_VIDEO_CAPTURE.to_ne_bytes()); // type
-    fmt[8..12].copy_from_slice(&width.to_ne_bytes());   // pix.width
-    fmt[12..16].copy_from_slice(&height.to_ne_bytes());  // pix.height
-    fmt[16..20].copy_from_slice(&fourcc.to_ne_bytes());  // pix.pixelformat
+    fmt[8..12].copy_from_slice(&width.to_ne_bytes()); // pix.width
+    fmt[12..16].copy_from_slice(&height.to_ne_bytes()); // pix.height
+    fmt[16..20].copy_from_slice(&fourcc.to_ne_bytes()); // pix.pixelformat
 
     unsafe { v4l2_ioctl(fd, VIDIOC_S_FMT, fmt.as_mut_ptr())? };
     Ok(())

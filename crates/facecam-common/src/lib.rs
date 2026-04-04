@@ -1,10 +1,10 @@
 pub mod device;
+pub mod diagnostics;
 pub mod formats;
+pub mod ipc;
+pub mod profiles;
 pub mod quirks;
+pub mod recovery;
 pub mod types;
 pub mod usb;
 pub mod v4l2;
-pub mod recovery;
-pub mod profiles;
-pub mod diagnostics;
-pub mod ipc;

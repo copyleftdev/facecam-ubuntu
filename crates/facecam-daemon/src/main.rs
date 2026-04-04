@@ -13,7 +13,9 @@ use facecam_common::types::{DaemonStatus, HealthStatus, PipelineState};
 
 #[derive(Parser)]
 #[command(name = "facecam-daemon")]
-#[command(about = "Facecam normalization daemon — captures from physical device, outputs to v4l2loopback")]
+#[command(
+    about = "Facecam normalization daemon — captures from physical device, outputs to v4l2loopback"
+)]
 struct Cli {
     /// Path to daemon config file
     #[arg(long)]

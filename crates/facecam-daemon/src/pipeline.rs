@@ -1,7 +1,6 @@
 use anyhow::{bail, Context, Result};
 use facecam_common::{
-    profiles,
-    recovery,
+    profiles, recovery,
     types::{DaemonStatus, HealthStatus, PipelineState},
     usb, v4l2,
 };
@@ -39,7 +38,11 @@ pub fn run(
         // Check for shutdown
         if shutdown_rx.try_recv().is_ok() {
             info!("Pipeline received shutdown signal");
-            update_state(&status_tx, PipelineState::ShuttingDown, HealthStatus::Healthy);
+            update_state(
+                &status_tx,
+                PipelineState::ShuttingDown,
+                HealthStatus::Healthy,
+            );
             return;
         }
 
@@ -73,11 +76,18 @@ pub fn run(
                 }
 
                 // Attempt recovery
-                update_state(&status_tx, PipelineState::Recovering, HealthStatus::Degraded);
+                update_state(
+                    &status_tx,
+                    PipelineState::Recovering,
+                    HealthStatus::Degraded,
+                );
                 recovery_count += 1;
                 update_recovery_count(&status_tx, recovery_count);
 
-                info!(attempt = consecutive_failures, "Attempting USB reset recovery");
+                info!(
+                    attempt = consecutive_failures,
+                    "Attempting USB reset recovery"
+                );
                 match recovery::usb_reset_facecam() {
                     Ok(reset) => {
                         info!(sysfs = %reset.sysfs_path.display(), "USB reset successful");
@@ -110,12 +120,11 @@ fn run_pipeline_once(
     update_source(status_tx, Some(source_path.clone()));
 
     // Phase 2: Probe and configure
-    let source_file = v4l2::open_device(&source_path)
-        .context("Failed to open source device")?;
+    let source_file = v4l2::open_device(&source_path).context("Failed to open source device")?;
     let source_fd = source_file.as_raw_fd();
 
-    let caps = v4l2::query_capabilities(source_fd)
-        .context("Failed to query source capabilities")?;
+    let caps =
+        v4l2::query_capabilities(source_fd).context("Failed to query source capabilities")?;
     info!(driver = %caps.driver, card = %caps.card, "Source device capabilities");
 
     if !caps.has_capture {
@@ -134,28 +143,31 @@ fn run_pipeline_once(
     }
 
     // Load profile to determine preferred mode
-    let profile = profiles::load_profile(&config.profile_name)
-        .unwrap_or_else(|_| {
-            warn!(profile = %config.profile_name, "Failed to load profile, using defaults");
-            profiles::load_profile("default").unwrap_or_else(|_| facecam_common::profiles::Profile {
-                name: "fallback".to_string(),
-                description: "Auto-generated fallback".to_string(),
-                video_mode: None,
-                controls: Default::default(),
-            })
-        });
+    let profile = profiles::load_profile(&config.profile_name).unwrap_or_else(|_| {
+        warn!(profile = %config.profile_name, "Failed to load profile, using defaults");
+        profiles::load_profile("default").unwrap_or_else(|_| facecam_common::profiles::Profile {
+            name: "fallback".to_string(),
+            description: "Auto-generated fallback".to_string(),
+            video_mode: None,
+            controls: Default::default(),
+        })
+    });
 
     // Select video mode
     let target_mode = if let Some(ref pvm) = profile.video_mode {
         // Find matching mode from reliable set
         reliable_modes
             .iter()
-            .find(|m| m.width == pvm.width && m.height == pvm.height && m.fps() >= pvm.fps as f64 - 1.0)
+            .find(|m| {
+                m.width == pvm.width && m.height == pvm.height && m.fps() >= pvm.fps as f64 - 1.0
+            })
             .copied()
             .or_else(|| reliable_modes.first().copied())
             .ok_or_else(|| anyhow::anyhow!("No matching video mode found"))?
     } else {
-        reliable_modes.first().ok_or_else(|| anyhow::anyhow!("No reliable modes"))?
+        reliable_modes
+            .first()
+            .ok_or_else(|| anyhow::anyhow!("No reliable modes"))?
     };
 
     info!(mode = %target_mode, "Selected video mode");

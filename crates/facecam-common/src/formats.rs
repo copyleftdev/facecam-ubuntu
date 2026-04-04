@@ -85,7 +85,10 @@ impl VideoMode {
     /// Bandwidth in bytes/sec for uncompressed, estimated for compressed
     pub fn bandwidth_bytes_per_sec(&self) -> Option<u64> {
         self.format.bytes_per_pixel().map(|bpp| {
-            (self.width as u64 * self.height as u64 * (bpp * 100.0) as u64 * self.fps_denominator as u64)
+            (self.width as u64
+                * self.height as u64
+                * (bpp * 100.0) as u64
+                * self.fps_denominator as u64)
                 / (self.fps_numerator as u64 * 100)
         })
     }

@@ -13,8 +13,8 @@ use tracing::{debug, error, info, warn};
 /// causing the kernel to unbind the driver. Writing 1 reauthorizes it,
 /// causing re-enumeration — equivalent to a physical unplug/replug.
 pub fn usb_reset_facecam() -> Result<ResetResult> {
-    let sysfs_path = find_facecam_sysfs_path()?
-        .ok_or_else(|| anyhow::anyhow!("Facecam not found in sysfs"))?;
+    let sysfs_path =
+        find_facecam_sysfs_path()?.ok_or_else(|| anyhow::anyhow!("Facecam not found in sysfs"))?;
 
     usb_reset_device(&sysfs_path)
 }
@@ -24,10 +24,7 @@ pub fn usb_reset_device(sysfs_path: &PathBuf) -> Result<ResetResult> {
     let auth_path = sysfs_path.join("authorized");
 
     if !auth_path.exists() {
-        bail!(
-            "sysfs authorized file not found at {}",
-            auth_path.display()
-        );
+        bail!("sysfs authorized file not found at {}", auth_path.display());
     }
 
     info!(path = %sysfs_path.display(), "Performing USB reset via sysfs");
@@ -97,7 +94,12 @@ where
     let mut last_error = None;
 
     for attempt in 1..=max_attempts {
-        info!(attempt, max_attempts, operation = operation_name, "Attempting operation");
+        info!(
+            attempt,
+            max_attempts,
+            operation = operation_name,
+            "Attempting operation"
+        );
 
         match operation(attempt) {
             Ok(result) => {
@@ -148,11 +150,17 @@ pub fn wait_for_device(timeout: Duration) -> Result<PathBuf> {
     let start = std::time::Instant::now();
     let poll_interval = Duration::from_millis(200);
 
-    info!(timeout_ms = timeout.as_millis() as u64, "Waiting for Facecam to appear");
+    info!(
+        timeout_ms = timeout.as_millis() as u64,
+        "Waiting for Facecam to appear"
+    );
 
     loop {
         if start.elapsed() > timeout {
-            bail!("Timeout waiting for Facecam to appear ({}ms)", timeout.as_millis());
+            bail!(
+                "Timeout waiting for Facecam to appear ({}ms)",
+                timeout.as_millis()
+            );
         }
 
         match find_facecam_sysfs_path() {

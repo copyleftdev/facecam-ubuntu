@@ -62,14 +62,22 @@ pub fn collect_system_info() -> SystemInfo {
         .unwrap_or_default()
         .lines()
         .find(|l| l.starts_with("PRETTY_NAME="))
-        .map(|l| l.trim_start_matches("PRETTY_NAME=").trim_matches('"').to_string())
+        .map(|l| {
+            l.trim_start_matches("PRETTY_NAME=")
+                .trim_matches('"')
+                .to_string()
+        })
         .unwrap_or_default();
 
     let ubuntu_version = fs::read_to_string("/etc/os-release")
         .unwrap_or_default()
         .lines()
         .find(|l| l.starts_with("VERSION_ID="))
-        .map(|l| l.trim_start_matches("VERSION_ID=").trim_matches('"').to_string())
+        .map(|l| {
+            l.trim_start_matches("VERSION_ID=")
+                .trim_matches('"')
+                .to_string()
+        })
         .unwrap_or_default();
 
     let uptime_secs = fs::read_to_string("/proc/uptime")
@@ -157,10 +165,7 @@ pub fn export_bundle(bundle: &DiagnosticsBundle) -> Result<PathBuf> {
     let dir = bundle_dir();
     fs::create_dir_all(&dir)?;
 
-    let filename = format!(
-        "facecam-diag-{}.json",
-        Utc::now().format("%Y%m%d-%H%M%S")
-    );
+    let filename = format!("facecam-diag-{}.json", Utc::now().format("%Y%m%d-%H%M%S"));
     let path = dir.join(&filename);
 
     let json = serde_json::to_string_pretty(bundle)?;

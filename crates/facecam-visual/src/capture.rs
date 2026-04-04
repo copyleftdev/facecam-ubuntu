@@ -24,12 +24,12 @@ const V4L2_MEMORY_MMAP: u32 = 1;
 
 // struct v4l2_buffer offsets — verified via offsetof() on x86_64 Linux 6.17
 const V4L2_BUF_SIZE: usize = 88; // sizeof(struct v4l2_buffer)
-const BUF_INDEX: usize = 0;      // __u32 index
-const BUF_TYPE: usize = 4;       // __u32 type
-const BUF_BYTESUSED: usize = 8;  // __u32 bytesused
-const BUF_MEMORY: usize = 60;    // __u32 memory
-const BUF_LENGTH: usize = 72;    // __u32 length
-const BUF_M_OFFSET: usize = 64;  // union m.offset (__u32)
+const BUF_INDEX: usize = 0; // __u32 index
+const BUF_TYPE: usize = 4; // __u32 type
+const BUF_BYTESUSED: usize = 8; // __u32 bytesused
+const BUF_MEMORY: usize = 60; // __u32 memory
+const BUF_LENGTH: usize = 72; // __u32 length
+const BUF_M_OFFSET: usize = 64; // union m.offset (__u32)
 
 unsafe fn ioctl(fd: RawFd, request: u64, arg: *mut u8) -> Result<()> {
     let ret = libc::ioctl(fd, request as libc::c_ulong, arg);
@@ -71,14 +71,16 @@ impl MmapCapture {
         let mut buffers = Vec::new();
         for i in 0..granted {
             let mut v4l2_buf = [0u8; V4L2_BUF_SIZE];
-            v4l2_buf[BUF_INDEX..BUF_INDEX+4].copy_from_slice(&i.to_ne_bytes());
-            v4l2_buf[BUF_TYPE..BUF_TYPE+4].copy_from_slice(&V4L2_BUF_TYPE_VIDEO_CAPTURE.to_ne_bytes());
-            v4l2_buf[BUF_MEMORY..BUF_MEMORY+4].copy_from_slice(&V4L2_MEMORY_MMAP.to_ne_bytes());
+            v4l2_buf[BUF_INDEX..BUF_INDEX + 4].copy_from_slice(&i.to_ne_bytes());
+            v4l2_buf[BUF_TYPE..BUF_TYPE + 4]
+                .copy_from_slice(&V4L2_BUF_TYPE_VIDEO_CAPTURE.to_ne_bytes());
+            v4l2_buf[BUF_MEMORY..BUF_MEMORY + 4].copy_from_slice(&V4L2_MEMORY_MMAP.to_ne_bytes());
 
             unsafe { ioctl(fd, VIDIOC_QUERYBUF, v4l2_buf.as_mut_ptr())? };
 
-            let length = u32::from_ne_bytes(v4l2_buf[BUF_LENGTH..BUF_LENGTH+4].try_into()?) as usize;
-            let offset = u32::from_ne_bytes(v4l2_buf[BUF_M_OFFSET..BUF_M_OFFSET+4].try_into()?);
+            let length =
+                u32::from_ne_bytes(v4l2_buf[BUF_LENGTH..BUF_LENGTH + 4].try_into()?) as usize;
+            let offset = u32::from_ne_bytes(v4l2_buf[BUF_M_OFFSET..BUF_M_OFFSET + 4].try_into()?);
 
             let ptr = unsafe {
                 libc::mmap(
@@ -104,9 +106,10 @@ impl MmapCapture {
         // 3. Enqueue all buffers
         for i in 0..granted {
             let mut v4l2_buf = [0u8; V4L2_BUF_SIZE];
-            v4l2_buf[BUF_INDEX..BUF_INDEX+4].copy_from_slice(&i.to_ne_bytes());
-            v4l2_buf[BUF_TYPE..BUF_TYPE+4].copy_from_slice(&V4L2_BUF_TYPE_VIDEO_CAPTURE.to_ne_bytes());
-            v4l2_buf[BUF_MEMORY..BUF_MEMORY+4].copy_from_slice(&V4L2_MEMORY_MMAP.to_ne_bytes());
+            v4l2_buf[BUF_INDEX..BUF_INDEX + 4].copy_from_slice(&i.to_ne_bytes());
+            v4l2_buf[BUF_TYPE..BUF_TYPE + 4]
+                .copy_from_slice(&V4L2_BUF_TYPE_VIDEO_CAPTURE.to_ne_bytes());
+            v4l2_buf[BUF_MEMORY..BUF_MEMORY + 4].copy_from_slice(&V4L2_MEMORY_MMAP.to_ne_bytes());
 
             unsafe { ioctl(fd, VIDIOC_QBUF, v4l2_buf.as_mut_ptr())? };
         }
@@ -142,16 +145,22 @@ impl MmapCapture {
 
         // Dequeue
         let mut v4l2_buf = [0u8; V4L2_BUF_SIZE];
-        v4l2_buf[BUF_TYPE..BUF_TYPE+4].copy_from_slice(&V4L2_BUF_TYPE_VIDEO_CAPTURE.to_ne_bytes());
-        v4l2_buf[BUF_MEMORY..BUF_MEMORY+4].copy_from_slice(&V4L2_MEMORY_MMAP.to_ne_bytes());
+        v4l2_buf[BUF_TYPE..BUF_TYPE + 4]
+            .copy_from_slice(&V4L2_BUF_TYPE_VIDEO_CAPTURE.to_ne_bytes());
+        v4l2_buf[BUF_MEMORY..BUF_MEMORY + 4].copy_from_slice(&V4L2_MEMORY_MMAP.to_ne_bytes());
 
         unsafe { ioctl(self.fd, VIDIOC_DQBUF, v4l2_buf.as_mut_ptr())? };
 
-        let index = u32::from_ne_bytes(v4l2_buf[BUF_INDEX..BUF_INDEX+4].try_into()?) as usize;
-        let bytesused = u32::from_ne_bytes(v4l2_buf[BUF_BYTESUSED..BUF_BYTESUSED+4].try_into()?) as usize;
+        let index = u32::from_ne_bytes(v4l2_buf[BUF_INDEX..BUF_INDEX + 4].try_into()?) as usize;
+        let bytesused =
+            u32::from_ne_bytes(v4l2_buf[BUF_BYTESUSED..BUF_BYTESUSED + 4].try_into()?) as usize;
 
         if index >= self.buffers.len() {
-            bail!("buffer index {} out of range (have {})", index, self.buffers.len());
+            bail!(
+                "buffer index {} out of range (have {})",
+                index,
+                self.buffers.len()
+            );
         }
 
         let buf = &self.buffers[index];
@@ -167,7 +176,8 @@ impl MmapCapture {
 
         // Find actual JPEG data start (search for SOI marker FFD8)
         // Some devices prepend padding or metadata before the JPEG data
-        let jpeg_start = data.windows(2)
+        let jpeg_start = data
+            .windows(2)
             .position(|w| w[0] == 0xFF && w[1] == 0xD8)
             .unwrap_or(0);
 
@@ -177,9 +187,10 @@ impl MmapCapture {
     /// Re-enqueue a buffer after processing
     pub fn enqueue_buffer(&self, index: usize) -> Result<()> {
         let mut v4l2_buf = [0u8; V4L2_BUF_SIZE];
-        v4l2_buf[BUF_INDEX..BUF_INDEX+4].copy_from_slice(&(index as u32).to_ne_bytes());
-        v4l2_buf[BUF_TYPE..BUF_TYPE+4].copy_from_slice(&V4L2_BUF_TYPE_VIDEO_CAPTURE.to_ne_bytes());
-        v4l2_buf[BUF_MEMORY..BUF_MEMORY+4].copy_from_slice(&V4L2_MEMORY_MMAP.to_ne_bytes());
+        v4l2_buf[BUF_INDEX..BUF_INDEX + 4].copy_from_slice(&(index as u32).to_ne_bytes());
+        v4l2_buf[BUF_TYPE..BUF_TYPE + 4]
+            .copy_from_slice(&V4L2_BUF_TYPE_VIDEO_CAPTURE.to_ne_bytes());
+        v4l2_buf[BUF_MEMORY..BUF_MEMORY + 4].copy_from_slice(&V4L2_MEMORY_MMAP.to_ne_bytes());
 
         unsafe { ioctl(self.fd, VIDIOC_QBUF, v4l2_buf.as_mut_ptr())? };
         Ok(())

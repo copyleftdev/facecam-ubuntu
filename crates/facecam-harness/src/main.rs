@@ -1,11 +1,7 @@
 use anyhow::Result;
 use chrono::Utc;
 use clap::{Parser, Subcommand};
-use facecam_common::{
-    diagnostics,
-    formats::PixelFormat,
-    recovery, usb, v4l2,
-};
+use facecam_common::{diagnostics, formats::PixelFormat, recovery, usb, v4l2};
 use serde::{Deserialize, Serialize};
 use std::os::unix::io::AsRawFd;
 use std::time::{Duration, Instant};
@@ -179,8 +175,7 @@ fn cmd_full(cli: &Cli) -> Result<()> {
 
     // Export results
     let home = std::env::var("HOME").unwrap_or_else(|_| "/tmp".to_string());
-    let report_dir = std::path::PathBuf::from(&home)
-        .join(".local/share/facecam/harness");
+    let report_dir = std::path::PathBuf::from(&home).join(".local/share/facecam/harness");
     std::fs::create_dir_all(&report_dir)?;
     let report_path = report_dir.join(format!(
         "harness-{}.json",
@@ -229,8 +224,7 @@ fn cmd_recovery(cli: &Cli) -> Result<()> {
 fn cmd_report(_cli: &Cli) -> Result<()> {
     // List previous reports
     let home = std::env::var("HOME").unwrap_or_else(|_| "/tmp".to_string());
-    let report_dir = std::path::PathBuf::from(&home)
-        .join(".local/share/facecam/harness");
+    let report_dir = std::path::PathBuf::from(&home).join(".local/share/facecam/harness");
 
     if !report_dir.exists() {
         println!("No previous harness reports found.");
@@ -239,11 +233,7 @@ fn cmd_report(_cli: &Cli) -> Result<()> {
 
     let mut reports: Vec<_> = std::fs::read_dir(&report_dir)?
         .filter_map(|e| e.ok())
-        .filter(|e| {
-            e.path()
-                .extension()
-                .is_some_and(|ext| ext == "json")
-        })
+        .filter(|e| e.path().extension().is_some_and(|ext| ext == "json"))
         .collect();
 
     reports.sort_by_key(|e| e.file_name());
@@ -401,11 +391,7 @@ fn test_open_close(dev_path: &str, cycles: u32) -> Result<serde_json::Value> {
 
     let passed = failures.is_empty();
     if !passed {
-        anyhow::bail!(
-            "{} of {} open/close cycles failed",
-            failures.len(),
-            cycles
-        );
+        anyhow::bail!("{} of {} open/close cycles failed", failures.len(), cycles);
     }
 
     Ok(serde_json::json!({

@@ -94,7 +94,11 @@ impl FrameStats {
         }
         let total: Duration = self.frame_times.iter().sum();
         let avg = total.as_secs_f64() / self.frame_times.len() as f64;
-        if avg > 0.0 { 1.0 / avg } else { 0.0 }
+        if avg > 0.0 {
+            1.0 / avg
+        } else {
+            0.0
+        }
     }
 
     fn avg_frame_time_ms(&self) -> f64 {
@@ -110,12 +114,15 @@ impl FrameStats {
             return 0.0;
         }
         let avg = self.avg_frame_time_ms();
-        let variance: f64 = self.frame_times.iter()
+        let variance: f64 = self
+            .frame_times
+            .iter()
             .map(|dt| {
                 let diff = dt.as_secs_f64() * 1000.0 - avg;
                 diff * diff
             })
-            .sum::<f64>() / self.frame_times.len() as f64;
+            .sum::<f64>()
+            / self.frame_times.len() as f64;
         variance.sqrt()
     }
 
@@ -173,9 +180,13 @@ mod font {
     }
 
     pub fn draw_string_bg(
-        buf: &mut [u32], buf_w: usize,
-        x: usize, y: usize,
-        text: &str, fg: u32, bg: u32,
+        buf: &mut [u32],
+        buf_w: usize,
+        x: usize,
+        y: usize,
+        text: &str,
+        fg: u32,
+        bg: u32,
     ) {
         // Draw background
         let text_w = text.len() * 6;
@@ -224,7 +235,10 @@ fn main() -> Result<()> {
     };
     let format_name = if use_mjpeg { "MJPEG" } else { "UYVY" };
 
-    println!("Mode: {}x{} @ {}fps {}", width, height, cli.fps, format_name);
+    println!(
+        "Mode: {}x{} @ {}fps {}",
+        width, height, cli.fps, format_name
+    );
 
     // Open device and set format
     let file = v4l2::open_device(&dev_path)?;
@@ -264,7 +278,10 @@ fn main() -> Result<()> {
     let win_w = width as usize;
     let win_h = height as usize + panel_total_h;
     let mut window = Window::new(
-        &format!("Facecam Visual Diagnostic — {}x{} {}", width, height, format_name),
+        &format!(
+            "Facecam Visual Diagnostic — {}x{} {}",
+            width, height, format_name
+        ),
         win_w,
         win_h,
         WindowOptions {
@@ -291,8 +308,7 @@ fn main() -> Result<()> {
     let mut waterfall = overlays::TimingWaterfall::new(win_w);
 
     // Set up MMAP streaming capture (the correct V4L2 I/O method for UVC cameras)
-    let mut capture = MmapCapture::new(fd, 4)
-        .context("Failed to set up MMAP capture")?;
+    let mut capture = MmapCapture::new(fd, 4).context("Failed to set up MMAP capture")?;
     capture.start().context("Failed to start streaming")?;
     println!("MMAP streaming started with 4 buffers.\n");
 
@@ -307,10 +323,20 @@ fn main() -> Result<()> {
     while window.is_open() && !window.is_key_down(Key::Escape) && !window.is_key_down(Key::Q) {
         // Handle keyboard input
         handle_keys(
-            &window, fd, &mut brightness, &mut contrast, &mut zoom,
-            &mut paused, &mut show_detail, &mut snapshot_count,
-            &framebuf, win_w, win_h,
-            &mut zebras_on, &mut focus_peak_on, &mut ab_compare,
+            &window,
+            fd,
+            &mut brightness,
+            &mut contrast,
+            &mut zoom,
+            &mut paused,
+            &mut show_detail,
+            &mut snapshot_count,
+            &framebuf,
+            win_w,
+            win_h,
+            &mut zebras_on,
+            &mut focus_peak_on,
+            &mut ab_compare,
         )?;
 
         if !paused {
@@ -325,8 +351,7 @@ fn main() -> Result<()> {
 
                     // Convert frame to ARGB pixels
                     if use_mjpeg {
-                        decode_mjpeg(data, &mut rgb_buf, &mut framebuf,
-                                     vid_w, vid_h, win_w);
+                        decode_mjpeg(data, &mut rgb_buf, &mut framebuf, vid_w, vid_h, win_w);
                     } else {
                         decode_uyvy(data, &mut framebuf, vid_w, vid_h, win_w);
                     }
@@ -373,7 +398,9 @@ fn main() -> Result<()> {
         // Separator line
         for x in 0..win_w {
             let idx = vid_h * win_w + x;
-            if idx < framebuf.len() { framebuf[idx] = 0x00FF88; }
+            if idx < framebuf.len() {
+                framebuf[idx] = 0x00FF88;
+            }
         }
 
         // Snapshot video region for scope analysis (avoids borrow conflict)
@@ -382,49 +409,90 @@ fn main() -> Result<()> {
         // Waveform (left half) + RGB Histogram (right half)
         let half_w = win_w / 2;
         overlays::draw_waveform(
-            &mut framebuf, win_w, &video_snapshot, vid_w, vid_h,
-            0, scope_y, half_w, scope_h,
+            &mut framebuf,
+            win_w,
+            &video_snapshot,
+            vid_w,
+            vid_h,
+            0,
+            scope_y,
+            half_w,
+            scope_h,
         );
         overlays::draw_rgb_histogram(
-            &mut framebuf, win_w, &video_snapshot, vid_w, vid_h,
-            half_w, scope_y, half_w, scope_h,
+            &mut framebuf,
+            win_w,
+            &video_snapshot,
+            vid_w,
+            vid_h,
+            half_w,
+            scope_y,
+            half_w,
+            scope_h,
         );
 
         // Stats text line
         let fps = stats.fps();
-        let fps_color = if fps >= 28.0 { 0x00FF88 } else if fps >= 15.0 { 0xFFCC00 } else { 0xFF4444 };
-        let ab_str = if ab_compare.has_reference() { " [A/B]" } else { "" };
-        let overlay_str = format!("{}{}",
+        let fps_color = if fps >= 28.0 {
+            0x00FF88
+        } else if fps >= 15.0 {
+            0xFFCC00
+        } else {
+            0xFF4444
+        };
+        let ab_str = if ab_compare.has_reference() {
+            " [A/B]"
+        } else {
+            ""
+        };
+        let overlay_str = format!(
+            "{}{}",
             if zebras_on { " [ZEBRA]" } else { "" },
             if focus_peak_on { " [FOCUS]" } else { "" },
         );
         let stats_line = format!(
             " {:.1}fps {:.1}ms jit:{:.1}ms {}KB  Brt:{} Con:{} Zm:{}  {:.0}s{}{}{}",
-            fps, stats.avg_frame_time_ms(), stats.jitter_ms(),
+            fps,
+            stats.avg_frame_time_ms(),
+            stats.jitter_ms(),
             stats.avg_frame_size() / 1024,
-            brightness, contrast, zoom,
+            brightness,
+            contrast,
+            zoom,
             stats.uptime_secs(),
             if paused { " PAUSED" } else { "" },
-            ab_str, overlay_str,
+            ab_str,
+            overlay_str,
         );
         // Clear stats row
         for x in 0..win_w {
             for dy in 0..panel_stats_h {
                 let idx = (stats_y + dy) * win_w + x;
-                if idx < framebuf.len() { framebuf[idx] = 0x0D0D1A; }
+                if idx < framebuf.len() {
+                    framebuf[idx] = 0x0D0D1A;
+                }
             }
         }
         font::draw_string(&mut framebuf, win_w, 2, stats_y + 4, &stats_line, fps_color);
 
         // Help line
         if show_detail {
-            let help = " +/- Brt  [/] Con  Z/X Zm  W Zebra  E Focus  A Ref  D Clear  S Snap  Q Quit";
+            let help =
+                " +/- Brt  [/] Con  Z/X Zm  W Zebra  E Focus  A Ref  D Clear  S Snap  Q Quit";
             font::draw_string(&mut framebuf, win_w, 2, stats_y + 14, help, 0x666688);
         }
 
         // Waterfall
         let target_ms = if cli.fps >= 50 { 16.7 } else { 33.3 };
-        waterfall.draw(&mut framebuf, win_w, 0, wf_y, win_w, panel_waterfall_h, target_ms);
+        waterfall.draw(
+            &mut framebuf,
+            win_w,
+            0,
+            wf_y,
+            win_w,
+            panel_waterfall_h,
+            target_ms,
+        );
 
         // FPS badge on video
         let badge = format!(" {:.0} FPS ", fps);
@@ -433,15 +501,39 @@ fn main() -> Result<()> {
         // Overlay indicators on video
         let mut indicator_y = 4;
         if zebras_on {
-            font::draw_string_bg(&mut framebuf, win_w, win_w - 60, indicator_y, " ZEBRA ", 0xFF4444, 0x000000);
+            font::draw_string_bg(
+                &mut framebuf,
+                win_w,
+                win_w - 60,
+                indicator_y,
+                " ZEBRA ",
+                0xFF4444,
+                0x000000,
+            );
             indicator_y += 12;
         }
         if focus_peak_on {
-            font::draw_string_bg(&mut framebuf, win_w, win_w - 60, indicator_y, " FOCUS ", 0xFF00FF, 0x000000);
+            font::draw_string_bg(
+                &mut framebuf,
+                win_w,
+                win_w - 60,
+                indicator_y,
+                " FOCUS ",
+                0xFF00FF,
+                0x000000,
+            );
             indicator_y += 12;
         }
         if ab_compare.has_reference() {
-            font::draw_string_bg(&mut framebuf, win_w, win_w - 60, indicator_y, "  A/B  ", 0x00CCFF, 0x000000);
+            font::draw_string_bg(
+                &mut framebuf,
+                win_w,
+                win_w - 60,
+                indicator_y,
+                "  A/B  ",
+                0x00CCFF,
+                0x000000,
+            );
         }
 
         // Update window
@@ -460,21 +552,31 @@ fn main() -> Result<()> {
 }
 
 fn handle_keys(
-    window: &Window, fd: i32,
-    brightness: &mut i64, contrast: &mut i64, zoom: &mut i64,
-    paused: &mut bool, show_detail: &mut bool, snap_count: &mut u32,
-    framebuf: &[u32], win_w: usize, win_h: usize,
-    zebras_on: &mut bool, focus_peak_on: &mut bool,
+    window: &Window,
+    fd: i32,
+    brightness: &mut i64,
+    contrast: &mut i64,
+    zoom: &mut i64,
+    paused: &mut bool,
+    show_detail: &mut bool,
+    snap_count: &mut u32,
+    framebuf: &[u32],
+    win_w: usize,
+    win_h: usize,
+    zebras_on: &mut bool,
+    focus_peak_on: &mut bool,
     ab_compare: &mut overlays::ABCompare,
 ) -> Result<()> {
     // Brightness +/-
-    if window.is_key_pressed(Key::Equal, minifb::KeyRepeat::Yes) ||
-       window.is_key_pressed(Key::NumPadPlus, minifb::KeyRepeat::Yes) {
+    if window.is_key_pressed(Key::Equal, minifb::KeyRepeat::Yes)
+        || window.is_key_pressed(Key::NumPadPlus, minifb::KeyRepeat::Yes)
+    {
         *brightness = (*brightness + 10).min(255);
         let _ = v4l2::set_control(fd, 0x00980900, *brightness as i32);
     }
-    if window.is_key_pressed(Key::Minus, minifb::KeyRepeat::Yes) ||
-       window.is_key_pressed(Key::NumPadMinus, minifb::KeyRepeat::Yes) {
+    if window.is_key_pressed(Key::Minus, minifb::KeyRepeat::Yes)
+        || window.is_key_pressed(Key::NumPadMinus, minifb::KeyRepeat::Yes)
+    {
         *brightness = (*brightness - 10).max(0);
         let _ = v4l2::set_control(fd, 0x00980900, *brightness as i32);
     }
@@ -552,7 +654,10 @@ fn handle_keys(
     // Focus peaking toggle
     if window.is_key_pressed(Key::E, minifb::KeyRepeat::No) {
         *focus_peak_on = !*focus_peak_on;
-        eprintln!("Focus peaking: {}", if *focus_peak_on { "ON" } else { "OFF" });
+        eprintln!(
+            "Focus peaking: {}",
+            if *focus_peak_on { "ON" } else { "OFF" }
+        );
     }
 
     // A/B compare — capture reference
@@ -627,8 +732,14 @@ fn yuv_to_rgb(y: f64, u: f64, v: f64) -> (u8, u8, u8) {
 }
 
 /// Decode MJPEG frame to ARGB framebuffer
-fn decode_mjpeg(data: &[u8], _rgb_buf: &mut [u8], buf: &mut [u32],
-                width: usize, height: usize, buf_w: usize) {
+fn decode_mjpeg(
+    data: &[u8],
+    _rgb_buf: &mut [u8],
+    buf: &mut [u32],
+    width: usize,
+    height: usize,
+    buf_w: usize,
+) {
     let mut decoder = jpeg_decoder::Decoder::new(data);
     // Force RGB output regardless of JPEG color space
     decoder.set_color_transform(jpeg_decoder::ColorTransform::RGB);
@@ -685,7 +796,8 @@ fn decode_mjpeg(data: &[u8], _rgb_buf: &mut [u8], buf: &mut [u32],
 }
 
 fn get_ctrl_value(controls: &[facecam_common::types::ControlValue], name: &str) -> i64 {
-    controls.iter()
+    controls
+        .iter()
         .find(|c| c.name == name)
         .map(|c| c.value)
         .unwrap_or(0)

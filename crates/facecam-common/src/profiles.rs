@@ -135,13 +135,14 @@ pub fn create_default_profiles() -> Result<()> {
                 ("saturation".to_string(), 35),
                 ("sharpness".to_string(), 2),
                 ("white_balance_temperature_auto".to_string(), 1),
-                ("auto_exposure".to_string(), 0),  // Auto mode
+                ("auto_exposure".to_string(), 0),        // Auto mode
                 ("power_line_frequency".to_string(), 2), // 60Hz
             ]),
         },
         Profile {
             name: "streaming".to_string(),
-            description: "Optimized for live streaming — 1080p60 MJPEG, balanced settings".to_string(),
+            description: "Optimized for live streaming — 1080p60 MJPEG, balanced settings"
+                .to_string(),
             video_mode: Some(ProfileVideoMode {
                 width: 1920,
                 height: 1080,

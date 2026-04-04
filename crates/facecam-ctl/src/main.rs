@@ -106,8 +106,10 @@ async fn main() -> Result<()> {
                                 .map(|m| m.to_string())
                                 .unwrap_or_else(|| "none".to_string())
                         );
-                        println!("  Frames:         captured={} written={} dropped={}",
-                            status.frames_captured, status.frames_written, status.frames_dropped);
+                        println!(
+                            "  Frames:         captured={} written={} dropped={}",
+                            status.frames_captured, status.frames_written, status.frames_dropped
+                        );
                         println!("  Recoveries:     {}", status.recovery_count);
                         println!(
                             "  Source:         {}",
@@ -164,8 +166,7 @@ async fn main() -> Result<()> {
                 }
             }
             ControlAction::Set { name, value } => {
-                let resp =
-                    send_command(DaemonCommand::SetControl { name, value }).await?;
+                let resp = send_command(DaemonCommand::SetControl { name, value }).await?;
                 print_simple_response(resp, cli.json)?;
             }
             ControlAction::List => {
@@ -198,8 +199,7 @@ async fn main() -> Result<()> {
 
         Commands::Profile { action } => match action {
             ProfileAction::Apply { name } => {
-                let resp =
-                    send_command(DaemonCommand::ApplyProfile { name }).await?;
+                let resp = send_command(DaemonCommand::ApplyProfile { name }).await?;
                 print_simple_response(resp, cli.json)?;
             }
             ProfileAction::List => {
@@ -287,14 +287,12 @@ async fn main() -> Result<()> {
 async fn send_command(command: DaemonCommand) -> Result<DaemonResponse> {
     let socket_path = ipc::socket_path();
 
-    let stream = UnixStream::connect(&socket_path)
-        .await
-        .with_context(|| {
-            format!(
-                "Failed to connect to daemon at {}. Is facecam-daemon running?",
-                socket_path.display()
-            )
-        })?;
+    let stream = UnixStream::connect(&socket_path).await.with_context(|| {
+        format!(
+            "Failed to connect to daemon at {}. Is facecam-daemon running?",
+            socket_path.display()
+        )
+    })?;
 
     let (reader, mut writer) = stream.into_split();
 
@@ -308,8 +306,8 @@ async fn send_command(command: DaemonCommand) -> Result<DaemonResponse> {
     let mut line = String::new();
     reader.read_line(&mut line).await?;
 
-    let response: DaemonResponse = serde_json::from_str(line.trim())
-        .context("Failed to parse daemon response")?;
+    let response: DaemonResponse =
+        serde_json::from_str(line.trim()).context("Failed to parse daemon response")?;
 
     Ok(response)
 }

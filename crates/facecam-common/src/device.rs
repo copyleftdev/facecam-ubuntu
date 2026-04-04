@@ -124,7 +124,11 @@ impl fmt::Display for DeviceFingerprint {
         writeln!(f, "Device:     {}", self.product)?;
         writeln!(f, "Firmware:   {}", self.firmware)?;
         writeln!(f, "Serial:     {}", self.serial)?;
-        writeln!(f, "USB:        bus {} addr {} ({})", self.usb_bus, self.usb_address, self.usb_speed)?;
+        writeln!(
+            f,
+            "USB:        bus {} addr {} ({})",
+            self.usb_bus, self.usb_address, self.usb_speed
+        )?;
         writeln!(f, "Port Path:  {:?}", self.usb_port_numbers)?;
         if let Some(ref dev) = self.v4l2_device {
             writeln!(f, "V4L2:       {}", dev)?;

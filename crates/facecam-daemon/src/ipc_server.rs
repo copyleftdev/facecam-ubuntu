@@ -2,8 +2,9 @@ use anyhow::Result;
 use facecam_common::{
     diagnostics,
     ipc::{self, DaemonCommand, DaemonResponse},
-    profiles, v4l2,
+    profiles,
     types::DaemonStatus,
+    v4l2,
 };
 use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -150,16 +151,17 @@ async fn handle_command(
                                     name, applied
                                 )))
                             }
-                            Err(e) => DaemonResponse::Error(format!(
-                                "Failed to open device: {}",
-                                e
-                            )),
+                            Err(e) => {
+                                DaemonResponse::Error(format!("Failed to open device: {}", e))
+                            }
                         }
                     } else {
                         DaemonResponse::Error("No source device connected".to_string())
                     }
                 }
-                Err(e) => DaemonResponse::Error(format!("Failed to load profile '{}': {}", name, e)),
+                Err(e) => {
+                    DaemonResponse::Error(format!("Failed to load profile '{}': {}", name, e))
+                }
             }
         }
 
@@ -171,12 +173,10 @@ async fn handle_command(
                         let fd = std::os::unix::io::AsRawFd::as_raw_fd(&file);
                         if let Some(ctrl_id) = v4l2::control_name_to_id(&name) {
                             match v4l2::set_control(fd, ctrl_id, value as i32) {
-                                Ok(()) => DaemonResponse::Ok(Some(format!(
-                                    "{}={}", name, value
-                                ))),
-                                Err(e) => DaemonResponse::Error(format!(
-                                    "Failed to set {}: {}", name, e
-                                )),
+                                Ok(()) => DaemonResponse::Ok(Some(format!("{}={}", name, value))),
+                                Err(e) => {
+                                    DaemonResponse::Error(format!("Failed to set {}: {}", name, e))
+                                }
                             }
                         } else {
                             DaemonResponse::Error(format!("Unknown control: {}", name))
@@ -198,9 +198,9 @@ async fn handle_command(
                         if let Some(ctrl_id) = v4l2::control_name_to_id(&name) {
                             match v4l2::get_control(fd, ctrl_id) {
                                 Ok(value) => DaemonResponse::ControlValue { name, value },
-                                Err(e) => DaemonResponse::Error(format!(
-                                    "Failed to get {}: {}", name, e
-                                )),
+                                Err(e) => {
+                                    DaemonResponse::Error(format!("Failed to get {}: {}", name, e))
+                                }
                             }
                         } else {
                             DaemonResponse::Error(format!("Unknown control: {}", name))
@@ -222,7 +222,8 @@ async fn handle_command(
                         match v4l2::enumerate_controls(fd) {
                             Ok(controls) => DaemonResponse::Controls(controls),
                             Err(e) => DaemonResponse::Error(format!(
-                                "Failed to enumerate controls: {}", e
+                                "Failed to enumerate controls: {}",
+                                e
                             )),
                         }
                     }

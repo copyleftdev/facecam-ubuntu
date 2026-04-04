@@ -4,8 +4,7 @@ use facecam_common::{
     device::UsbSpeed,
     diagnostics,
     formats::{FormatVerdict, VideoMode},
-    quirks,
-    usb, v4l2,
+    quirks, usb, v4l2,
 };
 use std::os::unix::io::AsRawFd;
 
@@ -89,10 +88,13 @@ fn cmd_detect(format: OutputFormat) -> Result<()> {
 
     if devices.is_empty() {
         if format == OutputFormat::Json {
-            println!("{}", serde_json::to_string_pretty(&serde_json::json!({
-                "found": false,
-                "devices": []
-            }))?);
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&serde_json::json!({
+                    "found": false,
+                    "devices": []
+                }))?
+            );
         } else {
             println!("No Elgato cameras detected.");
             println!();
@@ -139,7 +141,9 @@ fn cmd_detect(format: OutputFormat) -> Result<()> {
             if dev.product.is_usb2_fallback() {
                 println!("  CRITICAL: Facecam is in USB 2.0 fallback mode (PID 0x0077).");
                 println!("            The device string says \"USB3-REQUIRED-FOR-FACECAM\".");
-                println!("            It will NOT function as a camera until moved to a USB 3.0 port.");
+                println!(
+                    "            It will NOT function as a camera until moved to a USB 3.0 port."
+                );
                 println!("            Look for a blue USB-A port or a USB-C/Thunderbolt port.");
             }
 
@@ -151,7 +155,10 @@ fn cmd_detect(format: OutputFormat) -> Result<()> {
             }
 
             // Speed warning
-            if matches!(dev.usb_speed, UsbSpeed::High | UsbSpeed::Full | UsbSpeed::Low) {
+            if matches!(
+                dev.usb_speed,
+                UsbSpeed::High | UsbSpeed::Full | UsbSpeed::Low
+            ) {
                 println!("  WARNING: Device on USB 2.0 or lower. USB 3.0 is required.");
             }
 
@@ -171,11 +178,14 @@ fn cmd_formats(device: Option<String>, format: OutputFormat) -> Result<()> {
     let modes = v4l2::enumerate_all_modes(fd)?;
 
     if format == OutputFormat::Json {
-        println!("{}", serde_json::to_string_pretty(&serde_json::json!({
-            "device": dev_path,
-            "formats": formats,
-            "modes": modes,
-        }))?);
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&serde_json::json!({
+                "device": dev_path,
+                "formats": formats,
+                "modes": modes,
+            }))?
+        );
     } else {
         println!("=== Format Enumeration: {} ===\n", dev_path);
 
@@ -226,12 +236,7 @@ fn cmd_controls(device: Option<String>, format: OutputFormat) -> Result<()> {
             println!("  {} (0x{:08x}):", ctrl.name, ctrl.id);
             println!(
                 "    type={:?}  value={}  range=[{}, {}]  step={}  default={}",
-                ctrl.control_type,
-                ctrl.value,
-                ctrl.minimum,
-                ctrl.maximum,
-                ctrl.step,
-                ctrl.default
+                ctrl.control_type, ctrl.value, ctrl.minimum, ctrl.maximum, ctrl.step, ctrl.default
             );
             if !ctrl.menu_items.is_empty() {
                 for item in &ctrl.menu_items {
