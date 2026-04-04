@@ -72,11 +72,11 @@ jobs:
         run: cargo build --workspace --release
       - name: Package .deb
         run: |
-          PKG_VERSION="${GITHUB_REF_NAME:-0.1.0}"
-          PKG_VERSION="${PKG_VERSION#v}"
-          # Fallback for non-tag builds
-          if [[ "$PKG_VERSION" == *"/"* ]] || [[ -z "$PKG_VERSION" ]]; then
-            PKG_VERSION="0.1.0-$(git rev-parse --short HEAD)"
+          # Use tag name for releases, otherwise generate a dev version
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            PKG_VERSION="${GITHUB_REF_NAME#v}"
+          else
+            PKG_VERSION="0.1.0~dev.$(git rev-parse --short HEAD)"
           fi
 
           PKG_DIR="facecam-ubuntu_${PKG_VERSION}_amd64"
