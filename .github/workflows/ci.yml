@@ -171,11 +171,10 @@ jobs:
 
           # Build .deb
           dpkg-deb --build --root-owner-group "$PKG_DIR"
-          mv "${PKG_DIR}.deb" "facecam-ubuntu_${PKG_VERSION}_amd64.deb"
 
-          echo "Built: facecam-ubuntu_${PKG_VERSION}_amd64.deb"
-          dpkg-deb --info "facecam-ubuntu_${PKG_VERSION}_amd64.deb"
-          dpkg-deb --contents "facecam-ubuntu_${PKG_VERSION}_amd64.deb"
+          echo "Built: ${PKG_DIR}.deb"
+          dpkg-deb --info "${PKG_DIR}.deb"
+          dpkg-deb --contents "${PKG_DIR}.deb"
 
       - name: Upload .deb artifact
         uses: actions/upload-artifact@v4
