@@ -109,7 +109,7 @@ fn cmd_full(cli: &Cli) -> Result<()> {
     println!("Device: {}\n", dev_path);
 
     // Test 1: Device detection
-    tests.push(run_test("device_detection", || test_device_detection()));
+    tests.push(run_test("device_detection", test_device_detection));
 
     // Test 2: Format enumeration
     tests.push(run_test("format_enumeration", || {
@@ -137,10 +137,10 @@ fn cmd_full(cli: &Cli) -> Result<()> {
     }));
 
     // Test 7: USB topology validation
-    tests.push(run_test("usb_topology", || test_usb_topology()));
+    tests.push(run_test("usb_topology", test_usb_topology));
 
     // Test 8: Kernel module status
-    tests.push(run_test("kernel_modules", || test_kernel_modules()));
+    tests.push(run_test("kernel_modules", test_kernel_modules));
 
     let completed_at = Utc::now();
     let passed = tests.iter().filter(|t| t.passed).count();
@@ -217,7 +217,7 @@ fn cmd_stream_stability(cli: &Cli, duration: u64) -> Result<()> {
 }
 
 fn cmd_recovery(cli: &Cli) -> Result<()> {
-    let result = run_test("usb_recovery", || test_usb_recovery());
+    let result = run_test("usb_recovery", test_usb_recovery);
     print_single_result(&result, cli.json)
 }
 

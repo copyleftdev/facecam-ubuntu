@@ -1,7 +1,6 @@
-/// Broadcast-grade visual analysis overlays for camera diagnostics.
-///
-/// All overlays operate on the ARGB framebuffer and are composited
-/// directly onto the video frame or drawn in dedicated panel areas.
+// Broadcast-grade visual analysis overlays for camera diagnostics.
+// All overlays operate on the ARGB framebuffer and are composited
+// directly onto the video frame or drawn in dedicated panel areas.
 
 /// Zebra stripes — diagonal hatch pattern over overexposed regions.
 /// Standard broadcast threshold: luma > 235 (100 IRE).
@@ -21,7 +20,7 @@ pub fn draw_zebras(buf: &mut [u32], w: usize, h: usize, threshold: u8, frame_cou
             let luma = (0.2126 * r as f32 + 0.7152 * g as f32 + 0.0722 * b as f32) as u8;
             if luma > threshold {
                 // Draw diagonal stripe pattern
-                if ((x + y + phase) / 3) % 2 == 0 {
+                if ((x + y + phase) / 3).is_multiple_of(2) {
                     buf[idx] = 0xFF0000; // Red stripe
                 }
             }
@@ -64,11 +63,10 @@ pub fn draw_focus_peaking(buf: &mut [u32], w: usize, h: usize, sensitivity: u32,
                 + 2 * luma[(y + 1) * w + x]
                 + luma[(y + 1) * w + (x + 1)];
             let magnitude = ((gx.abs() + gy.abs()) as u32) >> 1;
-            if magnitude > sensitivity {
-                if idx < buf.len() {
+            if magnitude > sensitivity
+                && idx < buf.len() {
                     buf[idx] = color;
                 }
-            }
         }
     }
 }
@@ -169,9 +167,9 @@ fn draw_histogram_channel(
     ph: usize,
     color: u32,
 ) {
-    for i in 0..256 {
+    for (i, &count) in hist.iter().enumerate() {
         let x = px + (i * pw) / 256;
-        let bar_h = ((hist[i] as u64 * ph as u64) / max_count as u64) as usize;
+        let bar_h = ((count as u64 * ph as u64) / max_count as u64) as usize;
         for row in 0..bar_h.min(ph) {
             let y = py + ph - 1 - row;
             let idx = y * buf_w + x;
@@ -242,9 +240,9 @@ pub fn draw_waveform(
                 continue;
             }
             let pixel = video_buf[src_idx];
-            let r = ((pixel >> 16) & 0xFF) as u32;
-            let g = ((pixel >> 8) & 0xFF) as u32;
-            let b = (pixel & 0xFF) as u32;
+            let r = (pixel >> 16) & 0xFF;
+            let g = (pixel >> 8) & 0xFF;
+            let b = pixel & 0xFF;
             let luma = (r * 54 + g * 183 + b * 19) >> 8;
 
             let plot_y = panel_y + panel_h - 1 - (luma as usize * (panel_h - 1) / 255);
@@ -274,13 +272,13 @@ pub fn draw_waveform(
             } // Skip empty pixels
             let luma_level = 255 - ((y - panel_y) * 255 / panel_h);
             let color = if luma_level > 235 {
-                blend_color(0xFF3333, brightness as u32) // Red — overexposed
+                blend_color(0xFF3333, brightness) // Red — overexposed
             } else if luma_level > 200 {
-                blend_color(0xFFCC00, brightness as u32) // Yellow — hot
+                blend_color(0xFFCC00, brightness) // Yellow — hot
             } else if luma_level < 16 {
-                blend_color(0x3333FF, brightness as u32) // Blue — crushed
+                blend_color(0x3333FF, brightness) // Blue — crushed
             } else {
-                blend_color(0x00FF66, brightness as u32) // Green — safe
+                blend_color(0x00FF66, brightness) // Green — safe
             };
             buf[idx] = color;
         }

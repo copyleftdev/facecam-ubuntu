@@ -1,3 +1,4 @@
+#![allow(clippy::too_many_arguments)]
 /// facecam-visual — Live visual diagnostic harness for the Elgato Facecam
 ///
 /// Opens the camera, captures frames, decodes them, and displays in a window
@@ -145,7 +146,7 @@ mod font {
 
     pub fn char_bitmap(c: char) -> &'static [u8] {
         let idx = c as usize;
-        if idx >= 32 && idx < 128 {
+        if (32..128).contains(&idx) {
             let offset = (idx - 32) * 7;
             if offset + 7 <= FONT_DATA.len() {
                 return &FONT_DATA[offset..offset + 7];

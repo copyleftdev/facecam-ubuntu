@@ -1,7 +1,7 @@
 use crate::usb::find_facecam_sysfs_path;
 use anyhow::{bail, Context, Result};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::Duration;
 use tracing::{debug, error, info, warn};
@@ -20,7 +20,7 @@ pub fn usb_reset_facecam() -> Result<ResetResult> {
 }
 
 /// Reset a USB device by its sysfs path
-pub fn usb_reset_device(sysfs_path: &PathBuf) -> Result<ResetResult> {
+pub fn usb_reset_device(sysfs_path: &Path) -> Result<ResetResult> {
     let auth_path = sysfs_path.join("authorized");
 
     if !auth_path.exists() {
@@ -67,7 +67,7 @@ pub fn usb_reset_device(sysfs_path: &PathBuf) -> Result<ResetResult> {
     info!("USB reset complete, device re-enumerated");
 
     Ok(ResetResult {
-        sysfs_path: sysfs_path.clone(),
+        sysfs_path: sysfs_path.to_path_buf(),
         success: true,
         previous_state: current,
         new_state,
