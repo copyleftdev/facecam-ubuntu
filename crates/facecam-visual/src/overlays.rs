@@ -63,10 +63,9 @@ pub fn draw_focus_peaking(buf: &mut [u32], w: usize, h: usize, sensitivity: u32,
                 + 2 * luma[(y + 1) * w + x]
                 + luma[(y + 1) * w + (x + 1)];
             let magnitude = ((gx.abs() + gy.abs()) as u32) >> 1;
-            if magnitude > sensitivity
-                && idx < buf.len() {
-                    buf[idx] = color;
-                }
+            if magnitude > sensitivity && idx < buf.len() {
+                buf[idx] = color;
+            }
         }
     }
 }
