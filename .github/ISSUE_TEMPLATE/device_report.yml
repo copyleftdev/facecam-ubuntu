@@ -1,0 +1,58 @@
+name: Device Compatibility Report
+description: Report how the Facecam behaves on your system
+labels: ["device-report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Help us build the compatibility matrix. Run the harness and share results:
+        ```bash
+        facecam-harness --json full > harness.json
+        facecam-probe detect --format json > detect.json
+        ```
+  - type: input
+    id: ubuntu-version
+    attributes:
+      label: Ubuntu version
+      placeholder: "25.10"
+    validations:
+      required: true
+  - type: input
+    id: kernel
+    attributes:
+      label: Kernel version
+      placeholder: "6.17.0-20-generic"
+    validations:
+      required: true
+  - type: input
+    id: firmware
+    attributes:
+      label: Facecam firmware version
+      placeholder: "4.09"
+    validations:
+      required: true
+  - type: dropdown
+    id: usb-connection
+    attributes:
+      label: USB connection type
+      options:
+        - Direct to motherboard (USB-A 3.0)
+        - Direct to motherboard (USB-C)
+        - USB hub
+        - Thunderbolt dock
+        - Other
+  - type: textarea
+    id: probe-output
+    attributes:
+      label: facecam-probe detect output
+      render: text
+  - type: textarea
+    id: harness-output
+    attributes:
+      label: facecam-harness full output
+      render: json
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes
+      placeholder: Any quirks, workarounds, or observations

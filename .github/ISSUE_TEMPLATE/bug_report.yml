@@ -1,0 +1,52 @@
+name: Bug Report
+description: Something isn't working as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please include a diagnostics bundle if possible:
+        ```bash
+        facecam-probe diagnostics --format json > diag.json
+        ```
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      placeholder: Describe the issue
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      placeholder: Expected behavior
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Run `facecam-visual --resolution 720`
+        2. Press W for zebras
+        3. ...
+  - type: input
+    id: ubuntu-version
+    attributes:
+      label: Ubuntu version
+      placeholder: "25.10"
+  - type: input
+    id: kernel
+    attributes:
+      label: Kernel version
+      placeholder: "6.17.0-20-generic"
+  - type: input
+    id: firmware
+    attributes:
+      label: Facecam firmware
+      placeholder: "4.09 (from facecam-probe detect)"
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics bundle
+      description: Paste output of `facecam-probe diagnostics --format json`
+      render: json
